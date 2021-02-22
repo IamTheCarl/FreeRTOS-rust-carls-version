@@ -1,3 +1,6 @@
+// TODO add some constants like pdPASS, pdFAIL, pdTRUE, and pdFALSE. They'll make it easier to
+// make use of C code with Rust.
+
 /// Basic error type for the library.
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub enum FreeRtosError {

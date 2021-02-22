@@ -2,12 +2,6 @@
 # It is not intended for manual editing.
 [[package]]
 name = "aligned"
-version = "0.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d39da9b88ae1a81c03c9c082b8db83f1d0e93914126041962af61034ab44c4a5"
-
-[[package]]
-name = "aligned"
 version = "0.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "eb1ce8b3382016136ab1d31a1b5ce807144f8b7eb2d5f16b2108f0f07edceb94"
@@ -36,13 +30,10 @@ dependencies = [
 ]
 
 [[package]]
-name = "cast"
-version = "0.2.3"
+name = "bitfield"
+version = "0.13.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4b9434b9a5aa1450faa3f9cb14ea0e8c53bb5d2b3c1bfd1ab4fc03e9f33fbfb0"
-dependencies = [
- "rustc_version",
-]
+checksum = "46afbd2983a5d5a7bd740ccb198caf5b82f45c40c09c0eed36052d91cb92e719"
 
 [[package]]
 name = "cc"
@@ -52,24 +43,26 @@ checksum = "c3d87b23d6a92cd03af510a5ade527033f6aa6fa92161e2d5863a907d4c5e31d"
 
 [[package]]
 name = "cortex-m"
-version = "0.5.10"
+version = "0.6.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3c0b159a1e8306949579de3698c841dba58058197b65c60807194e4fa1e7a554"
+checksum = "9075300b07c6a56263b9b582c214d0ff037b00d45ec9fde1cc711490c56f1bb9"
 dependencies = [
- "aligned 0.2.0",
+ "aligned",
  "bare-metal",
- "cortex-m 0.6.2",
+ "bitfield",
+ "cortex-m 0.7.1",
  "volatile-register",
 ]
 
 [[package]]
 name = "cortex-m"
-version = "0.6.2"
+version = "0.7.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2954942fbbdd49996704e6f048ce57567c3e1a4e2dc59b41ae9fde06a01fc763"
+checksum = "a0b756a8bffc56025de45218a48ff9b801180440c0ee49a722b32d49dcebc771"
 dependencies = [
- "aligned 0.3.2",
  "bare-metal",
+ "bitfield",
+ "embedded-hal",
  "volatile-register",
 ]
 
@@ -96,9 +89,9 @@ dependencies = [
 
 [[package]]
 name = "embedded-hal"
-version = "0.2.3"
+version = "0.2.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ee4908a155094da7723c2d60d617b820061e3b4efcc3d9e293d206a5a76c170b"
+checksum = "fa998ce59ec9765d15216393af37a58961ddcefb14c753b4816ba2191d865fcb"
 dependencies = [
  "nb",
  "void",
@@ -120,13 +113,11 @@ version = "0.1.2"
 name = "freertos-rust-examples"
 version = "0.1.1"
 dependencies = [
- "cortex-m 0.6.2",
+ "cortex-m 0.7.1",
  "cortex-m-rt",
  "freertos-cargo-build",
  "freertos-rust",
  "nrf9160-pac",
- "panic-halt",
- "stm32l1xx-hal",
 ]
 
 [[package]]
@@ -160,15 +151,9 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e3180a8037475ca6400b7c41295be402ac6be7ef509a1b97b71d136a087e45cf"
 dependencies = [
  "bare-metal",
- "cortex-m 0.6.2",
+ "cortex-m 0.6.7",
  "vcell",
 ]
-
-[[package]]
-name = "panic-halt"
-version = "0.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "de96540e0ebde571dc55c73d60ef407c653844e6f9a1e2fdbd40c07b9252d812"
 
 [[package]]
 name = "proc-macro2"
@@ -232,32 +217,6 @@ name = "stable_deref_trait"
 version = "1.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "dba1a27d3efae4351c8051072d619e3ade2820635c3958d826bfea39d59b54c8"
-
-[[package]]
-name = "stm32l1"
-version = "0.5.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "edda4346740d0f01082c353dca33b320e84f9fb51765fdcac7a624017c5a8ff4"
-dependencies = [
- "bare-metal",
- "cortex-m 0.5.10",
- "vcell",
-]
-
-[[package]]
-name = "stm32l1xx-hal"
-version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4dc5ad008615fe51a3f7752468f83d1d1d5d80e1b32520be690bf4fad64e7aa4"
-dependencies = [
- "bare-metal",
- "cast",
- "cortex-m 0.5.10",
- "embedded-hal",
- "nb",
- "stm32l1",
- "void",
-]
 
 [[package]]
 name = "syn"

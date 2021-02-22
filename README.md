@@ -4,7 +4,15 @@ This project is based on code from [freertos-rust](https://github.com/lobaro/Fre
  simplify the usage of [FreeRTOS](https://github.com/FreeRTOS/FreeRTOS-Kernel) in embedded applications written
  in Rust.
 
-This is a work in progress but it's planned to eventually be significantly different from the original freertos-rust. Rather than wrapping C functions in structs and calling it a day, this library intends to make FreeRTOS feel like it was designed to be used with Rust. This includes the addition of features to make safe sharing of resources between tasks and interrupts. That's probably the biggest feature to be added.
+This is a work in progress but it's planned to eventually be significantly different from the original freertos-rust. Rather than wrapping C functions in structs and calling it a day, this library intends to make FreeRTOS feel like it was designed to be used with Rust.
+
+Planned changes:
+* Compiler enforced prevention of calling non-ISR safe functions from an ISR
+* Safe deferred interrupts
+* Have FreeRTOS use the Rust global heap, rather than Rust use the FreeRTOS heap.
+
+Complete changes:
+* Tasks are given a handle to themselves
 
 ## How it works
 

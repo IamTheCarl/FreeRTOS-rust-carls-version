@@ -10,20 +10,11 @@ keywords = ["FreeRTOS", "embedded", "demo", "examples"]
 repository = "https://github.com/lobaro/FreeRTOS-rust"
 
 [dependencies]
-freertos-rust = {path = "../freertos-rust"}
+freertos-rust = { path = "../freertos-rust" }
 
 [target.'cfg(target_arch = "arm")'.dependencies]
-cortex-m = "0.6.0"
-cortex-m-rt = {version = "0.6.12"}
-nrf9160-pac = "0.2.1"
-
-# Example: stm32-cortex-m3
-[target.thumbv7m-none-eabi.dependencies]
-panic-halt = "0.2.0"
-stm32l1xx-hal = {version = "0.1.0", features = ["stm32l151"], default-features = false}
-
-# Example: nrf9160
-[target.thumbv8m.main-none-eabihf.dependencies]
+cortex-m = "0.7.1"
+cortex-m-rt = { version = "0.6.12" }
 nrf9160-pac = "0.2.1"
 
 # Example: win
@@ -33,4 +24,4 @@ nrf9160-pac = "0.2.1"
 [target.x86_64-unknown-linux-gnu.dependencies]
 
 [build-dependencies]
-freertos-cargo-build = {path = "../freertos-cargo-build"}
+freertos-cargo-build = { path = "../freertos-cargo-build" }

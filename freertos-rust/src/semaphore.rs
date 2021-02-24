@@ -1,4 +1,5 @@
 use crate::base::*;
+use crate::operating_system::*;
 use crate::shim::*;
 use crate::units::*;
 
@@ -11,8 +12,10 @@ unsafe impl Send for Semaphore {}
 unsafe impl Sync for Semaphore {}
 
 impl Semaphore {
+    // TODO add ISR support.
+
     /// Create a new binary semaphore
-    pub fn new_binary() -> Result<Semaphore, FreeRtosError> {
+    pub fn new_binary(_os: FreeRTOS) -> Result<Semaphore, FreeRtosError> {
         unsafe {
             let s = freertos_rs_create_binary_semaphore();
             if s == 0 as *const _ {
@@ -23,7 +26,7 @@ impl Semaphore {
     }
 
     /// Create a new counting semaphore
-    pub fn new_counting(max: u32, initial: u32) -> Result<Semaphore, FreeRtosError> {
+    pub fn new_counting(_os: FreeRTOS, max: u32, initial: u32) -> Result<Semaphore, FreeRtosError> {
         unsafe {
             let s = freertos_rs_create_counting_semaphore(max, initial);
             if s == 0 as *const _ {

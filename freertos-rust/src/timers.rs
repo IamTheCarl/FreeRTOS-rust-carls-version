@@ -1,10 +1,8 @@
 use crate::base::*;
+use crate::operating_system::*;
 use crate::prelude::v1::*;
 use crate::shim::*;
 use crate::units::*;
-
-unsafe impl Send for Timer {}
-unsafe impl Sync for Timer {}
 
 /// A FreeRTOS software timer.
 ///
@@ -24,6 +22,15 @@ pub struct TimerBuilder<D: DurationTicks> {
 }
 
 impl<D: DurationTicks> TimerBuilder<D> {
+    /// Create a new timer builder.
+    pub fn new(_os: FreeRTOS, period: D) -> TimerBuilder<D> {
+        TimerBuilder {
+            name: "timer".into(),
+            period: period,
+            auto_reload: true,
+        }
+    }
+
     /// Set the name of the timer.
     pub fn set_name(&mut self, name: &str) -> &mut Self {
         self.name = name.into();
@@ -60,15 +67,6 @@ impl<D: DurationTicks> TimerBuilder<D> {
 }
 
 impl Timer {
-    /// Create a new timer builder.
-    pub fn new<D: DurationTicks>(period: D) -> TimerBuilder<D> {
-        TimerBuilder {
-            name: "timer".into(),
-            period: period,
-            auto_reload: true,
-        }
-    }
-
     unsafe fn spawn_inner<'a>(
         name: &str,
         period_ticks: FreeRtosTickType,

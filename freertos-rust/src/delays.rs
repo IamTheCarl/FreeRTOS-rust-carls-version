@@ -1,6 +1,6 @@
 use crate::base::*;
+use crate::operating_system::*;
 use crate::shim::*;
-use crate::task::*;
 use crate::units::*;
 
 /// Delay the current task by the given duration, minus the
@@ -10,14 +10,13 @@ pub struct TaskDelay {
 }
 
 impl TaskDelay {
-    /// Create a new helper, marking the current time as the start of the
+    /// Create a new delay helper, marking the current time as the start of the
     /// next measurement.
-    pub fn new() -> TaskDelay {
+    pub fn new(os: FreeRTOS) -> TaskDelay {
         TaskDelay {
-            last_wake_time: FreeRtosUtils::get_tick_count(),
+            last_wake_time: os.get_tick_count(),
         }
     }
-
     /// Delay the execution of the current task by the given duration,
     /// minus the time spent in this task since the last delay.
     pub fn delay_until<D: DurationTicks>(&mut self, delay: D) {
@@ -38,22 +37,24 @@ impl TaskDelay {
 pub struct TaskDelayPeriodic {
     last_wake_time: FreeRtosTickType,
     period_ticks: FreeRtosTickType,
+    os: FreeRTOS,
 }
 
 impl TaskDelayPeriodic {
     /// Create a new timer with the set period.
-    pub fn new<D: DurationTicks>(period: D) -> TaskDelayPeriodic {
-        let l = FreeRtosUtils::get_tick_count();
+    pub fn new<D: DurationTicks>(os: FreeRTOS, period: D) -> TaskDelayPeriodic {
+        let l = os.get_tick_count();
 
         TaskDelayPeriodic {
             last_wake_time: l,
             period_ticks: period.to_ticks(),
+            os,
         }
     }
 
     /// Has the set period passed? If it has, resets the internal timer.
     pub fn should_run(&mut self) -> bool {
-        let c = FreeRtosUtils::get_tick_count();
+        let c = self.os.get_tick_count();
         if (c - self.last_wake_time) < (self.period_ticks) {
             false
         } else {
@@ -69,6 +70,6 @@ impl TaskDelayPeriodic {
 
     /// Reset the internal timer to zero.
     pub fn reset(&mut self) {
-        self.last_wake_time = FreeRtosUtils::get_tick_count();
+        self.last_wake_time = self.os.get_tick_count();
     }
 }

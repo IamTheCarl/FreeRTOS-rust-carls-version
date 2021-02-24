@@ -11,7 +11,7 @@ pub struct InterruptContext {
 
 impl InterruptContext {
     /// Instantiate a new context.
-    pub unsafe fn new() -> InterruptContext {
+    pub fn new() -> InterruptContext {
         InterruptContext {
             x_higher_priority_task_woken: 0,
         }

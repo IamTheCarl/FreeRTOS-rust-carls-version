@@ -1,5 +1,6 @@
 use crate::base::*;
 use crate::isr::*;
+use crate::operating_system::*;
 use crate::prelude::v1::*;
 use crate::shim::*;
 use crate::units::*;
@@ -16,19 +17,19 @@ pub struct Queue<T: Sized + Copy> {
 }
 
 impl<T: Sized + Copy> Queue<T> {
-    pub fn new(max_size: usize) -> Result<Queue<T>, FreeRtosError> {
+    pub fn new(_os: FreeRTOS, max_size: usize) -> Result<Queue<T>, FreeRtosError> {
         let item_size = mem::size_of::<T>();
 
         let handle = unsafe { freertos_rs_queue_create(max_size as u32, item_size as u32) };
 
         if handle == 0 as *const _ {
-            return Err(FreeRtosError::OutOfMemory);
+            Err(FreeRtosError::OutOfMemory)
+        } else {
+            Ok(Queue {
+                queue: handle,
+                item_type: PhantomData,
+            })
         }
-
-        Ok(Queue {
-            queue: handle,
-            item_type: PhantomData,
-        })
     }
 
     /// Send an item to the end of the queue. Wait for the queue to have empty space for it.

@@ -1,5 +1,6 @@
 use crate::base::*;
 use crate::isr::*;
+use crate::operating_system::*;
 use crate::prelude::v1::*;
 use crate::shim::*;
 use crate::units::*;
@@ -83,7 +84,7 @@ impl TaskBuilder {
     /// Start a new task that can't return a value.
     pub fn start<F>(&self, func: F) -> Result<Task, FreeRtosError>
     where
-        F: FnOnce(Task) -> (),
+        F: FnOnce(Task, FreeRTOS) -> (),
         F: Send + 'static,
     {
         Task::spawn(
@@ -97,7 +98,7 @@ impl TaskBuilder {
 
 impl Task {
     /// Prepare a builder object for the new task.
-    pub fn new() -> TaskBuilder {
+    pub fn new(_os: FreeRTOS) -> TaskBuilder {
         TaskBuilder {
             task_name: "rust_task".into(),
             task_stack_size: 1024,
@@ -105,8 +106,13 @@ impl Task {
         }
     }
 
+    /// Construct task from raw FreeRTOS handle.
+    pub unsafe fn from_raw(task_handle: FreeRtosTaskHandle) -> Task {
+        Task { task_handle }
+    }
+
     unsafe fn spawn_inner<'a>(
-        f: Box<dyn FnOnce(Task)>,
+        f: Box<dyn FnOnce(Task, FreeRTOS)>,
         name: &str,
         stack_size: u16,
         priority: TaskPriority,
@@ -141,10 +147,13 @@ impl Task {
         extern "C" fn thread_start(main: *mut CVoid) -> *mut CVoid {
             unsafe {
                 {
-                    let b = Box::from_raw(main as *mut Box<dyn FnOnce(Task)>);
-                    b(Task {
-                        task_handle: freertos_rs_get_current_task(),
-                    });
+                    let b = Box::from_raw(main as *mut Box<dyn FnOnce(Task, FreeRTOS)>);
+                    b(
+                        Task {
+                            task_handle: freertos_rs_get_current_task(),
+                        },
+                        FreeRTOS {},
+                    );
                 }
 
                 freertos_rs_delete_task(0 as *const _);
@@ -165,7 +174,7 @@ impl Task {
         f: F,
     ) -> Result<Task, FreeRtosError>
     where
-        F: FnOnce(Task) -> (),
+        F: FnOnce(Task, FreeRTOS) -> (),
         F: Send + 'static,
     {
         unsafe {
@@ -186,18 +195,6 @@ impl Task {
         }
     }
 
-    /// Try to find the task of the current execution context.
-    pub fn current() -> Result<Task, FreeRtosError> {
-        unsafe {
-            let t = freertos_rs_get_current_task();
-            if t != 0 as *const _ {
-                Ok(Task { task_handle: t })
-            } else {
-                Err(FreeRtosError::TaskNotFound)
-            }
-        }
-    }
-
     /// Forcibly set the notification value for this task.
     pub fn set_notification_value(&self, val: u32) {
         self.notify(TaskNotification::OverwriteValue(val))
@@ -213,6 +210,7 @@ impl Task {
 
     /// Notify this task from an interrupt.
     pub fn notify_from_isr(
+        // FIXME The ISR should not get a direct copy of this task.
         &self,
         context: &InterruptContext,
         notification: TaskNotification,
@@ -269,16 +267,9 @@ impl Task {
 }
 
 /// Helper methods to be performed on the task that is currently executing.
-pub struct CurrentTask;
+pub struct CurrentTask; // FIXME could easily be called from an interrupt.
 
 impl CurrentTask {
-    /// Delay the execution of the current task.
-    pub fn delay<D: DurationTicks>(delay: D) {
-        unsafe {
-            freertos_rs_vTaskDelay(delay.to_ticks());
-        }
-    }
-
     /// Get the minimum amount of stack that was ever left on the current task.
     pub fn get_stack_high_water_mark() -> u32 {
         unsafe { freertos_rs_get_stack_high_water_mark(0 as FreeRtosTaskHandle) as u32 }
@@ -345,69 +336,4 @@ pub struct FreeRtosTaskStatus {
     pub base_priority: TaskPriority,
     pub run_time_counter: FreeRtosUnsignedLong,
     pub stack_high_water_mark: FreeRtosUnsignedShort,
-}
-
-pub struct FreeRtosUtils;
-
-impl FreeRtosUtils {
-    // Should only be used for testing purpose!
-    pub fn invoke_assert() {
-        unsafe {
-            freertos_rs_invoke_configASSERT();
-        }
-    }
-    pub fn start_scheduler() -> ! {
-        unsafe {
-            freertos_rs_vTaskStartScheduler();
-        }
-    }
-
-    pub fn get_tick_count() -> FreeRtosTickType {
-        unsafe { freertos_rs_xTaskGetTickCount() }
-    }
-
-    pub fn get_tick_count_duration() -> Duration {
-        Duration::ticks(Self::get_tick_count())
-    }
-
-    pub fn get_number_of_tasks() -> usize {
-        unsafe { freertos_rs_get_number_of_tasks() as usize }
-    }
-
-    pub fn get_all_tasks(tasks_len: Option<usize>) -> FreeRtosSchedulerState {
-        let tasks_len = tasks_len.unwrap_or(Self::get_number_of_tasks());
-        let mut tasks = Vec::with_capacity(tasks_len as usize);
-        let mut total_run_time = 0;
-
-        unsafe {
-            let filled = freertos_rs_get_system_state(
-                tasks.as_mut_ptr(),
-                tasks_len as FreeRtosUBaseType,
-                &mut total_run_time,
-            );
-            tasks.set_len(filled as usize);
-        }
-
-        let tasks = tasks
-            .into_iter()
-            .map(|t| FreeRtosTaskStatus {
-                task: Task {
-                    task_handle: t.handle,
-                },
-                name: unsafe { str_from_c_string(t.task_name) }
-                    .unwrap_or_else(|_| String::from("?")),
-                task_number: t.task_number,
-                task_state: t.task_state,
-                current_priority: TaskPriority(t.current_priority as u8),
-                base_priority: TaskPriority(t.base_priority as u8),
-                run_time_counter: t.run_time_counter,
-                stack_high_water_mark: t.stack_high_water_mark,
-            })
-            .collect();
-
-        FreeRtosSchedulerState {
-            tasks: tasks,
-            total_run_time: total_run_time,
-        }
-    }
 }

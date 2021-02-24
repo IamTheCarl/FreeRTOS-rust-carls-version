@@ -11,31 +11,29 @@ fn main() {
         FREERTOS_HOOKS.set_on_assert(|| println!("Assert hook called"));
     }
 
-    //println!("Calling assert ...");
-    //FreeRtosUtils::invoke_assert();
-
-    println!("Starting FreeRTOS app ...");
-    Task::new()
-        .name("hello")
-        .stack_size(128)
-        .priority(TaskPriority(2))
-        .start(|_self_handle| {
-            let mut i = 0;
-            loop {
-                println!("Hello from Task! {}", i);
-                CurrentTask::delay(Duration::ms(1000));
-                i = i + 1;
-            }
-        })
-        .unwrap();
-    println!("Task registered");
-    //let free = freertos_rs_xPortGetFreeHeapSize();
-    // println!("Free Memory: {}!", free);
     println!("Starting scheduler");
-    FreeRtosUtils::start_scheduler();
-    loop {
-        println!("Loop forever!");
-    }
+    FreeRTOS::start_scheduler(|os| {
+        //println!("Calling assert ...");
+        //FreeRTOS::invoke_assert();
+
+        println!("Starting FreeRTOS app ...");
+        os.new_task()
+            .name("hello")
+            .stack_size(128)
+            .priority(TaskPriority(2))
+            .start(|_self_handle, os| {
+                let mut i = 0;
+                loop {
+                    println!("Hello from Task! {}", i);
+                    os.delay(Duration::ms(1000));
+                    i = i + 1;
+                }
+            })
+            .unwrap();
+        println!("Task registered");
+        //let free = freertos_rs_xPortGetFreeHeapSize();
+        // println!("Free Memory: {}!", free);
+    });
 }
 
 #[test]

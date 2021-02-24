@@ -1,4 +1,5 @@
 use crate::base::*;
+use crate::operating_system::*;
 use crate::prelude::v1::*;
 use crate::shim::*;
 use crate::units::*;
@@ -23,26 +24,6 @@ where
 {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "Mutex address: {:?}", self.mutex)
-    }
-}
-
-impl<T> MutexImpl<T, MutexNormal> {
-    /// Create a new mutex with the given inner value
-    pub fn new(t: T) -> Result<Self, FreeRtosError> {
-        Ok(MutexImpl {
-            mutex: MutexNormal::create()?,
-            data: UnsafeCell::new(t),
-        })
-    }
-}
-
-impl<T> MutexImpl<T, MutexRecursive> {
-    /// Create a new recursive mutex with the given inner value
-    pub fn new(t: T) -> Result<Self, FreeRtosError> {
-        Ok(MutexImpl {
-            mutex: MutexRecursive::create()?,
-            data: UnsafeCell::new(t),
-        })
     }
 }
 
@@ -78,6 +59,26 @@ where
 
             data.into_inner()
         }
+    }
+}
+
+impl<T> MutexImpl<T, MutexNormal> {
+    /// Create a new mutex with the given inner value
+    pub fn new(os: FreeRTOS, t: T) -> Result<Self, FreeRtosError> {
+        Ok(MutexImpl {
+            mutex: MutexNormal::create(os)?,
+            data: UnsafeCell::new(t),
+        })
+    }
+}
+
+impl<T> MutexImpl<T, MutexRecursive> {
+    /// Create a new recursive mutex with the given inner value
+    pub fn new(os: FreeRTOS, t: T) -> Result<Self, FreeRtosError> {
+        Ok(MutexImpl {
+            mutex: MutexRecursive::create(os)?,
+            data: UnsafeCell::new(t),
+        })
     }
 }
 
@@ -123,7 +124,7 @@ pub trait MutexInnerImpl
 where
     Self: Sized,
 {
-    fn create() -> Result<Self, FreeRtosError>;
+    fn create(os: FreeRTOS) -> Result<Self, FreeRtosError>;
     fn take<D: DurationTicks>(&self, max_wait: D) -> Result<(), FreeRtosError>;
     fn give(&self);
 }
@@ -131,7 +132,7 @@ where
 pub struct MutexNormal(FreeRtosSemaphoreHandle);
 
 impl MutexInnerImpl for MutexNormal {
-    fn create() -> Result<Self, FreeRtosError> {
+    fn create(_os: FreeRTOS) -> Result<Self, FreeRtosError> {
         let m = unsafe { freertos_rs_create_mutex() };
         if m == 0 as *const _ {
             return Err(FreeRtosError::OutOfMemory);
@@ -171,7 +172,7 @@ impl fmt::Debug for MutexNormal {
 pub struct MutexRecursive(FreeRtosSemaphoreHandle);
 
 impl MutexInnerImpl for MutexRecursive {
-    fn create() -> Result<Self, FreeRtosError> {
+    fn create(_os: FreeRTOS) -> Result<Self, FreeRtosError> {
         let m = unsafe { freertos_rs_create_recursive_mutex() };
         if m == 0 as *const _ {
             return Err(FreeRtosError::OutOfMemory);

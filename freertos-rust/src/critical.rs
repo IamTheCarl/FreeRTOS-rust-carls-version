@@ -1,4 +1,5 @@
 use crate::base::*;
+use crate::operating_system::*;
 use crate::prelude::v1::*;
 use crate::shim::*;
 
@@ -37,7 +38,7 @@ impl<T> ExclusiveData<T> {
         }
     }
 
-    pub fn lock(&self) -> Result<ExclusiveDataGuard<T>, FreeRtosError> {
+    pub fn lock(&self, _os: &FreeRTOS) -> Result<ExclusiveDataGuard<T>, FreeRtosError> {
         Ok(ExclusiveDataGuard {
             __data: &self.data,
             __lock: CriticalRegion::enter(),

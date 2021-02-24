@@ -8,8 +8,11 @@ This is a work in progress but it's planned to eventually be significantly diffe
 
 Planned changes:
 * Compiler enforced prevention of calling non-ISR safe functions from an ISR
+* Convenient (and reasonably safe) handoff of assets to ISRs.
+* Safe sharing of queues and other data structures between tasks.
 * Safe deferred interrupts
-* Have FreeRTOS use the Rust global heap, rather than Rust use the FreeRTOS heap.
+* Access to raw handles for when this API is getting in your way (let me know when that happens)
+* Have FreeRTOS use the Rust global heap, rather than Rust use the FreeRTOS heap. (unsure if possible)
 
 Complete changes:
 * Tasks are given a handle to themselves

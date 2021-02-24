@@ -71,6 +71,7 @@ mod critical;
 mod delays;
 mod isr;
 mod mutex;
+mod operating_system;
 mod queue;
 mod semaphore;
 mod task;
@@ -78,7 +79,8 @@ mod timers;
 mod units;
 mod utils;
 
-pub mod patterns;
+// TODO get that working again once we get the core utils where we want them.
+// pub mod patterns;
 
 // Internal stuff that is only public for first Proof of Concept
 pub use crate::base::*;
@@ -92,6 +94,7 @@ pub use crate::delays::*;
 pub use crate::hooks::*;
 pub use crate::isr::*;
 pub use crate::mutex::*;
+pub use crate::operating_system::FreeRTOS;
 pub use crate::queue::*;
 pub use crate::semaphore::*;
 pub use crate::task::*;

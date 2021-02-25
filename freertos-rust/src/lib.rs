@@ -1,4 +1,6 @@
 #![feature(allocator_api)]
+#![feature(negative_impls)]
+#![feature(auto_traits)]
 //! # FreeRTOS for Rust
 //!
 //! Rust interface for the FreeRTOS embedded operating system. Requires nightly Rust.

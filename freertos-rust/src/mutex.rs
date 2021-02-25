@@ -1,4 +1,5 @@
 use crate::base::*;
+use crate::isr::*;
 use crate::operating_system::*;
 use crate::prelude::v1::*;
 use crate::shim::*;
@@ -8,8 +9,9 @@ pub type Mutex<T> = MutexImpl<T, MutexNormal>;
 pub type RecursiveMutex<T> = MutexImpl<T, MutexRecursive>;
 
 unsafe impl<T: Sync + Send, M> Send for MutexImpl<T, M> {}
-
 unsafe impl<T: Sync + Send, M> Sync for MutexImpl<T, M> {}
+
+impl<T: Sync + Send, M> !ISRSafe for MutexImpl<T, M> {}
 
 /// Mutual exclusion access to a contained value. Can be recursive -
 /// the current owner of a lock can re-lock it.

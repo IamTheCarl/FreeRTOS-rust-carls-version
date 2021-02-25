@@ -8,6 +8,8 @@ use crate::units::*;
 unsafe impl<T: Sized + Copy> Send for Queue<T> {}
 unsafe impl<T: Sized + Copy> Sync for Queue<T> {}
 
+impl<T: Sized + Copy> !ISRSafe for Queue<T> {}
+
 /// A queue with a finite size. The items are owned by the queue and are
 /// copied.
 #[derive(Debug)]

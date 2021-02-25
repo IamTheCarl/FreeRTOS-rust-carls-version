@@ -1,4 +1,5 @@
 use crate::base::*;
+use crate::isr::*;
 use crate::operating_system::*;
 use crate::shim::*;
 use crate::units::*;
@@ -10,6 +11,8 @@ pub struct Semaphore {
 
 unsafe impl Send for Semaphore {}
 unsafe impl Sync for Semaphore {}
+
+impl !ISRSafe for Semaphore {}
 
 impl Semaphore {
     // TODO add ISR support.

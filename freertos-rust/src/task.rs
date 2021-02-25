@@ -7,6 +7,9 @@ use crate::units::*;
 use crate::utils::*;
 
 unsafe impl Send for Task {}
+impl !ISRSafe for Task {}
+
+// FIXME it is possible for the task handle to outlive the actual task.
 
 /// Handle for a FreeRTOS task
 #[derive(Debug, Clone)]

@@ -1,8 +1,11 @@
 use crate::base::*;
+use crate::isr::*;
 use crate::operating_system::*;
 use crate::prelude::v1::*;
 use crate::shim::*;
 use crate::units::*;
+
+impl !ISRSafe for Timer {}
 
 /// A FreeRTOS software timer.
 ///

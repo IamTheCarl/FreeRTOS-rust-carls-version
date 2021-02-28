@@ -21,19 +21,20 @@ extern "C" {
 
     pub fn freertos_rs_xTaskGetTickCount() -> FreeRtosTickType;
 
-    pub fn freertos_rs_create_recursive_mutex() -> FreeRtosQueueHandle;
-    pub fn freertos_rs_create_mutex() -> FreeRtosQueueHandle;
+    pub fn freertos_rs_create_recursive_semaphore() -> FreeRtosQueueHandle;
+    pub fn freertos_rs_create_semaphore() -> FreeRtosQueueHandle;
 
-    pub fn freertos_rs_take_recursive_mutex(
-        mutex: FreeRtosQueueHandle,
+    pub fn freertos_rs_take_recursive_semaphore(
+        semaphore: FreeRtosQueueHandle,
         max: FreeRtosTickType,
     ) -> FreeRtosBaseType;
-    pub fn freertos_rs_take_mutex(
-        mutex: FreeRtosQueueHandle,
+    pub fn freertos_rs_take_semaphore(
+        semaphore: FreeRtosQueueHandle,
         max: FreeRtosTickType,
     ) -> FreeRtosBaseType;
-    pub fn freertos_rs_give_mutex(mutex: FreeRtosQueueHandle) -> FreeRtosBaseType;
-    pub fn freertos_rs_give_recursive_mutex(mutex: FreeRtosQueueHandle) -> FreeRtosBaseType;
+    pub fn freertos_rs_give_semaphore(semaphore: FreeRtosQueueHandle) -> FreeRtosBaseType;
+    pub fn freertos_rs_give_recursive_semaphore(semaphore: FreeRtosQueueHandle)
+        -> FreeRtosBaseType;
 
     pub fn freertos_rs_take_semaphore_isr(
         semaphore: FreeRtosQueueHandle,
@@ -44,13 +45,15 @@ extern "C" {
         xHigherPriorityTaskWoken: FreeRtosBaseTypeMutPtr,
     ) -> FreeRtosBaseType;
 
-    pub fn freertos_rs_delete_semaphore(mutex: FreeRtosQueueHandle);
+    pub fn freertos_rs_delete_semaphore(semaphore: FreeRtosQueueHandle);
 
     pub fn freertos_rs_create_binary_semaphore() -> FreeRtosQueueHandle;
     pub fn freertos_rs_create_counting_semaphore(
         max: FreeRtosUBaseType,
         initial: FreeRtosUBaseType,
     ) -> FreeRtosQueueHandle;
+
+    pub fn freertos_rs_semaphore_get_count(xSemaphore: FreeRtosQueueHandle) -> FreeRtosUBaseType;
 
     pub fn freertos_rs_queue_create(
         length: FreeRtosUBaseType,
@@ -106,6 +109,8 @@ extern "C" {
     ) -> FreeRtosUBaseType;
     pub fn freertos_rs_delete_task(task: FreeRtosTaskHandle);
     pub fn freertos_rs_task_get_name(task: FreeRtosTaskHandle) -> FreeRtosCharPtr;
+    pub fn freertos_rs_task_suspend(xTaskToSuspend: FreeRtosTaskHandle);
+    pub fn freertos_rs_task_resume(xTaskToResume: FreeRtosTaskHandle);
     pub fn freertos_rs_get_stack_high_water_mark(task: FreeRtosTaskHandle) -> FreeRtosBaseType;
 
     pub fn freertos_rs_get_current_task() -> FreeRtosTaskHandle;

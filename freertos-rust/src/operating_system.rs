@@ -56,8 +56,8 @@ impl FreeRTOS {
     }
 
     /// Create a new binary semaphore
-    pub fn new_binary_semaphore(&self) -> Result<Semaphore, FreeRtosError> {
-        Semaphore::new_binary(self.clone())
+    pub fn new_binary_semaphore(&self) -> Result<BinarySemaphore, FreeRtosError> {
+        BinarySemaphore::new(self.clone())
     }
 
     /// Create a new counting semaphore
@@ -65,9 +65,10 @@ impl FreeRTOS {
         &self,
         max: u32,
         initial: u32,
-    ) -> Result<Semaphore, FreeRtosError> {
-        Semaphore::new_counting(self.clone(), max, initial)
+    ) -> Result<CountingSemaphore, FreeRtosError> {
+        CountingSemaphore::new(self.clone(), max, initial)
     }
+
     /// Create a new mutex with the given inner value
     pub fn new_mutex<T>(&self, t: T) -> Result<Mutex<T>, FreeRtosError> {
         Mutex::new(self.clone(), t)

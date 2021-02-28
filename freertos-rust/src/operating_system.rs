@@ -1,5 +1,6 @@
 use crate::base::*;
 use crate::delays::*;
+use crate::isr::*;
 use crate::mutex::*;
 use crate::prelude::v1::*;
 use crate::queue::*;
@@ -14,6 +15,8 @@ use crate::utils::*;
 #[derive(Clone, Copy)]
 pub struct FreeRTOS {}
 
+impl !ISRSafe for FreeRTOS {}
+
 impl FreeRTOS {
     pub fn start_scheduler<F: FnOnce(FreeRTOS)>(setup_function: F) -> ! {
         setup_function(FreeRTOS {});
@@ -21,6 +24,10 @@ impl FreeRTOS {
         unsafe {
             freertos_rs_vTaskStartScheduler();
         }
+    }
+
+    pub unsafe fn assume_init() -> FreeRTOS {
+        FreeRTOS {}
     }
 
     /// Prepare a builder object for the new task.

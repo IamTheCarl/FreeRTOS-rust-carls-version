@@ -64,6 +64,31 @@ where
     }
 }
 
+impl<T: ISRSafe + Clone> ISRSafeHandle<ISRMutexImpl> for MutexImpl<T, MutexNormal> {
+    unsafe fn new_isr_safe_handle(&self) -> ISRMutexImpl {
+        ISRMutexImpl {
+            mutex: self.mutex.clone(),
+        }
+    }
+}
+
+pub struct ISRMutexImpl {
+    mutex: MutexNormal,
+}
+
+impl ISRMutexImpl {
+    pub fn take<F: FnMut()>(&self, context: &mut InterruptContext, mut closure: F) -> bool {
+        if self.mutex.take_isr(context) {
+            closure();
+
+            self.mutex.give_isr(context);
+            true
+        } else {
+            false
+        }
+    }
+}
+
 impl<T> MutexImpl<T, MutexNormal> {
     /// Create a new mutex with the given inner value
     pub fn new(os: FreeRTOS, t: T) -> Result<Self, FreeRtosError> {
@@ -131,7 +156,18 @@ where
     fn give(&self);
 }
 
+#[derive(Clone)]
 pub struct MutexNormal(FreeRtosSemaphoreHandle);
+
+impl MutexNormal {
+    pub fn take_isr(&self, context: &mut InterruptContext) -> bool {
+        unsafe { freertos_rs_take_semaphore_isr(self.0, context.get_task_field_mut()) == 0 }
+    }
+
+    pub fn give_isr(&self, context: &mut InterruptContext) -> bool {
+        unsafe { freertos_rs_give_semaphore_isr(self.0, context.get_task_field_mut()) == 0 }
+    }
+}
 
 impl MutexInnerImpl for MutexNormal {
     fn create(_os: FreeRTOS) -> Result<Self, FreeRtosError> {
@@ -171,6 +207,7 @@ impl fmt::Debug for MutexNormal {
     }
 }
 
+#[derive(Clone)]
 pub struct MutexRecursive(FreeRtosSemaphoreHandle);
 
 impl MutexInnerImpl for MutexRecursive {

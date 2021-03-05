@@ -32,7 +32,7 @@ impl FreeRTOS {
 
     /// Prepare a builder object for the new task.
     pub fn new_task(&self) -> TaskBuilder {
-        Task::new(self.clone())
+        TaskRemoteHandle::new(self.clone())
     }
 
     /// Create a new delay helper, marking the current time as the start of the
@@ -122,7 +122,7 @@ impl FreeRTOS {
         let tasks = tasks
             .into_iter()
             .map(|t| FreeRtosTaskStatus {
-                task: unsafe { Task::from_raw(t.handle) },
+                task: unsafe { TaskRemoteHandle::from_raw(t.handle) },
                 name: unsafe { str_from_c_string(t.task_name) }
                     .unwrap_or_else(|_| String::from("?")),
                 task_number: t.task_number,

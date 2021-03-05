@@ -3,8 +3,9 @@ use crate::isr::*;
 use crate::operating_system::*;
 use crate::shim::*;
 use crate::units::*;
+use core::fmt::Debug;
 
-pub trait Semaphore<D: DurationTicks>: Send + Sync {
+pub trait Semaphore<D: DurationTicks>: Send + Sync + Debug {
     fn raw_handle(&self) -> FreeRtosSemaphoreHandle;
 
     /// Lock this semaphore in a RAII fashion
@@ -48,6 +49,7 @@ impl<'a, D: DurationTicks> Drop for SemaphoreGuard<'a, D> {
 }
 
 /// A binary semaphore
+#[derive(Debug)]
 pub struct BinarySemaphore {
     semaphore: FreeRtosSemaphoreHandle,
 }
@@ -133,6 +135,7 @@ impl ISRSafeHandle<ISRBinarySemaphore> for BinarySemaphore {
 }
 
 /// A counting semaphore.
+#[derive(Debug)]
 pub struct CountingSemaphore {
     semaphore: FreeRtosSemaphoreHandle,
 }

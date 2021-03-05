@@ -156,7 +156,7 @@ UBaseType_t freertos_rs_give_recursive_semaphore(QueueHandle_t semaphore)
 }
 #endif
 
-QueueHandle_t freertos_rs_create_mutex()
+QueueHandle_t freertos_rs_create_semaphore()
 {
 	return xSemaphoreCreateMutex();
 }

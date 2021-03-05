@@ -17,34 +17,30 @@ fn main() {
         //FreeRTOS::invoke_assert();
 
         println!("Starting FreeRTOS app ...");
-        os.new_task()
-            .name("hello")
-            .stack_size(128)
-            .priority(TaskPriority(2))
-            .start(|self_handle, os| {
-                let a = os.new_mutex(0).unwrap();
+        os.new_task("parent", 128, TaskPriority(2), |self_handle, os| {
+            let a = os.new_mutex(0).unwrap();
 
-                self_handle
-                    .spawn_child(|_self_handle, _os| loop {
-                        {
-                            let mut a = a.lock(Duration::infinite()).unwrap();
-                            *a += 1;
-                            println!("Child A: {}", *a);
-                        }
-                        os.delay(Duration::ms(1000));
-                    })
-                    .unwrap();
-
-                loop {
+            self_handle
+                .spawn_child("child", 128, TaskPriority(3), |_self_handle, _os| loop {
                     {
                         let mut a = a.lock(Duration::infinite()).unwrap();
                         *a += 1;
-                        println!("Parent A: {}", *a);
+                        println!("Child A: {}", *a);
                     }
                     os.delay(Duration::ms(1000));
+                })
+                .unwrap();
+
+            loop {
+                {
+                    let mut a = a.lock(Duration::infinite()).unwrap();
+                    *a += 1;
+                    println!("Parent A: {}", *a);
                 }
-            })
-            .unwrap();
+                os.delay(Duration::ms(1000));
+            }
+        })
+        .unwrap();
         println!("Task registered");
         //let free = freertos_rs_xPortGetFreeHeapSize();
         // println!("Free Memory: {}!", free);

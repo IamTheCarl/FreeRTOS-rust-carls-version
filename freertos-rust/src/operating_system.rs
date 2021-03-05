@@ -31,8 +31,18 @@ impl FreeRTOS {
     }
 
     /// Prepare a builder object for the new task.
-    pub fn new_task(&self) -> TaskBuilder {
-        TaskRemoteHandle::new(self.clone())
+    pub fn new_task<F>(
+        &self,
+        name: &str,
+        stack_depth: u16,
+        priority: TaskPriority,
+        func: F,
+    ) -> Result<TaskRemoteHandle, FreeRtosError>
+    where
+        F: FnOnce(TaskSelfHandle, FreeRTOS) -> !,
+        F: Send + 'static,
+    {
+        TaskRemoteHandle::new(self.clone(), name, stack_depth, priority, func)
     }
 
     /// Create a new delay helper, marking the current time as the start of the

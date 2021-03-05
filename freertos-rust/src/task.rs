@@ -135,49 +135,6 @@ impl TaskPriority {
     }
 }
 
-/// Helper for spawning a new task. Instantiate with [`Task::new()`].
-///
-/// [`Task::new()`]: struct.Task.html#method.new
-pub struct TaskBuilder {
-    task_name: String,
-    task_stack_size: u16,
-    task_priority: TaskPriority,
-}
-
-impl TaskBuilder {
-    /// Set the task's name.
-    pub fn name(&mut self, name: &str) -> &mut Self {
-        self.task_name = name.into();
-        self
-    }
-
-    /// Set the stack size, in words.
-    pub fn stack_size(&mut self, stack_size: u16) -> &mut Self {
-        self.task_stack_size = stack_size;
-        self
-    }
-
-    /// Set the task's priority.
-    pub fn priority(&mut self, priority: TaskPriority) -> &mut Self {
-        self.task_priority = priority;
-        self
-    }
-
-    /// Start a new task that can't return a value.
-    pub fn start<F>(&self, func: F) -> Result<TaskRemoteHandle, FreeRtosError>
-    where
-        F: FnOnce(TaskSelfHandle, FreeRTOS) -> !,
-        F: Send + 'static,
-    {
-        TaskRemoteHandle::spawn(
-            &self.task_name,
-            self.task_stack_size,
-            self.task_priority,
-            func,
-        )
-    }
-}
-
 pub struct TaskSelfHandle {
     task_handle: FreeRtosTaskHandle,
 }
@@ -192,11 +149,18 @@ impl TaskHandle for TaskSelfHandle {
 }
 
 impl<'scope> TaskSelfHandle {
-    pub fn spawn_child<F: FnOnce(TaskSelfHandle, FreeRTOS) -> ! + 'scope>(
+    pub fn spawn_child<F>(
         &self,
-        child: F,
-    ) -> Result<TaskRemoteHandle, FreeRtosError> {
-        unsafe { TaskRemoteHandle::spawn_inner(Box::new(child), "test", 512, TaskPriority(3)) }
+        name: &str,
+        stack_depth: u16,
+        priority: TaskPriority,
+        func: F,
+    ) -> Result<TaskRemoteHandle, FreeRtosError>
+    where
+        F: FnOnce(TaskSelfHandle, FreeRTOS) -> !,
+        F: Send + 'scope,
+    {
+        unsafe { TaskRemoteHandle::spawn_inner(Box::new(func), name, stack_depth, priority) }
     }
 
     /// A task can delete itself.
@@ -223,13 +187,19 @@ impl TaskHandle for TaskRemoteHandle {
 }
 
 impl TaskRemoteHandle {
-    /// Prepare a builder object for the new task.
-    pub fn new(_os: FreeRTOS) -> TaskBuilder {
-        TaskBuilder {
-            task_name: "rust_task".into(),
-            task_stack_size: 1024,
-            task_priority: TaskPriority(1),
-        }
+    /// Spawn a new independent task.
+    pub fn new<F>(
+        _os: FreeRTOS,
+        name: &str,
+        stack_depth: u16,
+        priority: TaskPriority,
+        func: F,
+    ) -> Result<TaskRemoteHandle, FreeRtosError>
+    where
+        F: FnOnce(TaskSelfHandle, FreeRTOS) -> !,
+        F: Send + 'static,
+    {
+        TaskRemoteHandle::spawn(name, stack_depth, priority, func)
     }
 
     /// Construct task from raw FreeRTOS handle.

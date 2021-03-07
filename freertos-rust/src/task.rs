@@ -87,7 +87,8 @@ impl<'env> TaskHandle for TaskSelfHandle {
 impl TaskSelfHandle {
     /// A task can delete itself.
     /// This is unsafe, because if another task depends on our stack, or whoever spawned us still has a handle,
-    /// they can hold an invalid reference.
+    /// they can hold an invalid reference. Also note that the drop methods for any objects in the current stack
+    /// frame will not be called. Make sure this is the only thing left in the scope when called.
     pub unsafe fn delete(&self) -> ! {
         freertos_rs_delete_task(self.task_handle);
 
@@ -121,6 +122,12 @@ impl TaskSelfHandle {
             Ok(val)
         } else {
             Err(FreeRtosError::Timeout)
+        }
+    }
+
+    pub fn new_remote_handle(&self) -> TaskRemoteHandle {
+        TaskRemoteHandle {
+            task_handle: self.task_handle,
         }
     }
 }
@@ -250,9 +257,17 @@ impl ISRSafeHandle<TaskISRHandle> for TaskRemoteHandle {
     }
 }
 
+impl ISRSafeHandle<TaskISRHandle> for TaskSelfHandle {
+    unsafe fn new_isr_safe_handle(&self) -> TaskISRHandle {
+        TaskISRHandle {
+            task_handle: self.task_handle,
+        }
+    }
+}
+
 impl TaskISRHandle {
     /// Notify this task from an interrupt.
-    pub fn notify_from_isr(
+    pub fn notify(
         &self,
         context: &InterruptContext,
         notification: TaskNotification,

@@ -29,6 +29,22 @@ pub trait TaskHandle {
     fn get_stack_high_water_mark(&self) -> u32 {
         unsafe { freertos_rs_get_stack_high_water_mark(self.raw_handle()) as u32 }
     }
+
+    /// Get an ISR safe handle.
+    /// This is safe because tasks never terminate.
+    fn new_isr_safe_handle(&self) -> TaskISRHandle {
+        TaskISRHandle {
+            task_handle: self.raw_handle(),
+        }
+    }
+}
+
+impl ISRSafeHandle<TaskISRHandle> for dyn TaskHandle {
+    unsafe fn new_isr_safe_handle(&self) -> TaskISRHandle {
+        TaskISRHandle {
+            task_handle: self.raw_handle(),
+        }
+    }
 }
 
 /// Task's execution priority. Low priority numbers denote low priority tasks.
@@ -247,22 +263,6 @@ impl TaskRemoteHandle {
 
 pub struct TaskISRHandle {
     task_handle: FreeRtosTaskHandle,
-}
-
-impl ISRSafeHandle<TaskISRHandle> for TaskRemoteHandle {
-    unsafe fn new_isr_safe_handle(&self) -> TaskISRHandle {
-        TaskISRHandle {
-            task_handle: self.task_handle,
-        }
-    }
-}
-
-impl ISRSafeHandle<TaskISRHandle> for TaskSelfHandle {
-    unsafe fn new_isr_safe_handle(&self) -> TaskISRHandle {
-        TaskISRHandle {
-            task_handle: self.task_handle,
-        }
-    }
 }
 
 impl TaskISRHandle {

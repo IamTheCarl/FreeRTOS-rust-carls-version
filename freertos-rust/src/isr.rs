@@ -1,5 +1,7 @@
 use crate::base::*;
 use crate::shim::*;
+use alloc::prelude::v1::Box;
+use core::marker::PhantomData;
 
 pub auto trait ISRSafe {}
 
@@ -49,4 +51,46 @@ impl Drop for InterruptContext {
             }
         }
     }
+}
+
+pub struct InterruptScope<C: InterruptController> {
+    _marker: PhantomData<C>,
+}
+
+impl<C: InterruptController> InterruptScope<C> {
+    pub fn open<F>(callback: F) -> InterruptScope<C>
+    where
+        F: Fn(&InterruptContext) + ISRSafe + 'static,
+    {
+        let scope = InterruptScope {
+            _marker: PhantomData,
+        };
+
+        // It is now safe to enable the ISR.
+        unsafe {
+            C::enable(Box::new(callback));
+        }
+
+        scope
+    }
+}
+
+impl<C: InterruptController> Drop for InterruptScope<C> {
+    fn drop(&mut self) {
+        // We must disable the ISR or risk invalid memory access.
+        unsafe {
+            C::disable();
+        }
+    }
+}
+
+pub trait InterruptController: Sized + ISRSafe {
+    /// Enable the ISR.
+    /// This function must panic if the ISR happens to already be enabled.
+    unsafe fn enable(callback: Box<dyn Fn(&InterruptContext)>);
+
+    /// Disables the interrupt. It won't be called anymore.
+    /// The interrupt controller that was passed to the enable function will immediately become invalid after
+    /// this function returns.
+    unsafe fn disable();
 }

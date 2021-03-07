@@ -39,7 +39,7 @@ impl FreeRTOS {
         func: F,
     ) -> Result<TaskRemoteHandle, FreeRtosError>
     where
-        F: FnOnce(TaskSelfHandle, FreeRTOS) -> !,
+        F: FnOnce(&TaskSelfHandle, FreeRTOS) -> !,
         F: Send + 'static,
     {
         TaskRemoteHandle::new(self.clone(), name, stack_depth, priority, func)

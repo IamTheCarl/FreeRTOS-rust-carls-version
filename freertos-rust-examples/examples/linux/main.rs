@@ -1,4 +1,5 @@
 use freertos_rust::*;
+use std::sync::Arc;
 
 #[global_allocator]
 static GLOBAL: FreeRtosAllocator = FreeRtosAllocator;
@@ -16,31 +17,35 @@ fn main() {
         //println!("Calling assert ...");
         //FreeRTOS::invoke_assert();
 
-        println!("Starting FreeRTOS app ...");
-        os.new_task("parent", 128, TaskPriority(2), |self_handle, os| {
-            let a = os.new_mutex(0).unwrap();
+        let value = Arc::new(os.new_mutex(0).unwrap());
 
-            self_handle
-                .spawn_child("child", 128, TaskPriority(3), |_self_handle, _os| loop {
-                    {
-                        let mut a = a.lock(Duration::infinite()).unwrap();
-                        *a += 1;
-                        println!("Child A: {}", *a);
-                    }
-                    os.delay(Duration::ms(1000));
-                })
-                .unwrap();
+        {
+            let value = value.clone();
 
-            loop {
+            println!("Starting FreeRTOS app ...");
+            os.new_task("A", 128, TaskPriority(2), move |_self_handle, os| loop {
                 {
-                    let mut a = a.lock(Duration::infinite()).unwrap();
-                    *a += 1;
-                    println!("Parent A: {}", *a);
+                    let mut value = value.lock(Duration::infinite()).unwrap();
+                    *value += 1;
+                    println!("A: {}", *value);
                 }
                 os.delay(Duration::ms(1000));
+            })
+            .unwrap();
+        }
+
+        os.new_task("B", 128, TaskPriority(3), move |_self_handle, os| loop {
+            // Error shows up on this line "TaskSelfHandle is not sync"
+
+            {
+                let mut value = value.lock(Duration::infinite()).unwrap();
+                *value += 1;
+                println!("B: {}", *value);
             }
+            os.delay(Duration::ms(1000));
         })
         .unwrap();
+
         println!("Task registered");
         //let free = freertos_rs_xPortGetFreeHeapSize();
         // println!("Free Memory: {}!", free);

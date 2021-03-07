@@ -139,30 +139,17 @@ pub struct TaskSelfHandle {
     task_handle: FreeRtosTaskHandle,
 }
 
-impl !Send for TaskSelfHandle {}
-impl !ISRSafe for TaskSelfHandle {}
+impl<'env> !Send for TaskSelfHandle {}
+impl<'env> !Sync for TaskSelfHandle {}
+impl<'env> !ISRSafe for TaskSelfHandle {}
 
-impl TaskHandle for TaskSelfHandle {
+impl<'env> TaskHandle for TaskSelfHandle {
     fn raw_handle(&self) -> FreeRtosTaskHandle {
         self.task_handle
     }
 }
 
-impl<'scope> TaskSelfHandle {
-    pub fn spawn_child<F>(
-        &self,
-        name: &str,
-        stack_depth: u16,
-        priority: TaskPriority,
-        func: F,
-    ) -> Result<TaskRemoteHandle, FreeRtosError>
-    where
-        F: FnOnce(TaskSelfHandle, FreeRTOS) -> !,
-        F: Send + 'scope,
-    {
-        unsafe { TaskRemoteHandle::spawn_inner(Box::new(func), name, stack_depth, priority) }
-    }
-
+impl TaskSelfHandle {
     /// A task can delete itself.
     /// This is unsafe, because if another task depends on our stack, or whoever spawned us still has a handle,
     /// they can hold an invalid reference.
@@ -175,7 +162,7 @@ impl<'scope> TaskSelfHandle {
 }
 
 /// Handle for a FreeRTOS task
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct TaskRemoteHandle {
     task_handle: FreeRtosTaskHandle,
 }
@@ -196,7 +183,7 @@ impl TaskRemoteHandle {
         func: F,
     ) -> Result<TaskRemoteHandle, FreeRtosError>
     where
-        F: FnOnce(TaskSelfHandle, FreeRTOS) -> !,
+        F: FnOnce(&TaskSelfHandle, FreeRTOS) -> !,
         F: Send + 'static,
     {
         TaskRemoteHandle::spawn(name, stack_depth, priority, func)
@@ -207,8 +194,8 @@ impl TaskRemoteHandle {
         TaskRemoteHandle { task_handle }
     }
 
-    unsafe fn spawn_inner<'a>(
-        f: Box<dyn FnOnce(TaskSelfHandle, FreeRTOS) -> ! + 'a>,
+    unsafe fn spawn_inner(
+        f: Box<dyn FnOnce(&TaskSelfHandle, FreeRTOS) -> !>,
         name: &str,
         stack_size: u16,
         priority: TaskPriority,
@@ -242,16 +229,14 @@ impl TaskRemoteHandle {
 
         extern "C" fn thread_start(main: *mut CVoid) -> *mut CVoid {
             unsafe {
-                {
-                    let b =
-                        Box::from_raw(main as *mut Box<dyn FnOnce(TaskSelfHandle, FreeRTOS) -> !>);
-                    b(
-                        TaskSelfHandle {
-                            task_handle: freertos_rs_get_current_task(),
-                        },
-                        FreeRTOS {},
-                    );
-                }
+                let b = Box::from_raw(main as *mut Box<dyn FnOnce(&TaskSelfHandle, FreeRTOS) -> !>);
+
+                let self_handle = TaskSelfHandle {
+                    task_handle: freertos_rs_get_current_task(),
+                };
+                let os = FreeRTOS {};
+
+                b(&self_handle, os);
             }
         }
 
@@ -267,7 +252,7 @@ impl TaskRemoteHandle {
         f: F,
     ) -> Result<TaskRemoteHandle, FreeRtosError>
     where
-        F: FnOnce(TaskSelfHandle, FreeRTOS) -> !,
+        F: FnOnce(&TaskSelfHandle, FreeRTOS) -> !,
         F: Send + 'static,
     {
         unsafe {

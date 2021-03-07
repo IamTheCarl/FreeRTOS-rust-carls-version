@@ -25,71 +25,6 @@ pub trait TaskHandle {
         }
     }
 
-    /// Forcibly set the notification value for this task.
-    fn set_notification_value(&self, val: u32) {
-        self.notify(TaskNotification::OverwriteValue(val))
-    }
-
-    /// Notify this task.
-    fn notify(&self, notification: TaskNotification) {
-        unsafe {
-            let n = notification.to_freertos();
-            freertos_rs_task_notify(self.raw_handle(), n.0, n.1);
-        }
-    }
-
-    /// Notify this task from an interrupt.
-    fn notify_from_isr(
-        // FIXME The ISR should not get a direct copy of this task.
-        &self,
-        context: &InterruptContext,
-        notification: TaskNotification,
-    ) -> Result<(), FreeRtosError> {
-        unsafe {
-            let n = notification.to_freertos();
-            let t = freertos_rs_task_notify_isr(
-                self.raw_handle(),
-                n.0,
-                n.1,
-                context.get_task_field_mut(),
-            );
-            if t != 0 {
-                Err(FreeRtosError::QueueFull)
-            } else {
-                Ok(())
-            }
-        }
-    }
-
-    /// Take the notification and either clear the notification value or decrement it by one.
-    fn take_notification<D: DurationTicks>(&self, clear: bool, wait_for: D) -> u32 {
-        unsafe { freertos_rs_task_notify_take(if clear { 1 } else { 0 }, wait_for.to_ticks()) }
-    }
-
-    /// Wait for a notification to be posted.
-    fn wait_for_notification<D: DurationTicks>(
-        &self,
-        clear_bits_enter: u32,
-        clear_bits_exit: u32,
-        wait_for: D,
-    ) -> Result<u32, FreeRtosError> {
-        let mut val = 0;
-        let r = unsafe {
-            freertos_rs_task_notify_wait(
-                clear_bits_enter,
-                clear_bits_exit,
-                &mut val as *mut _,
-                wait_for.to_ticks(),
-            )
-        };
-
-        if r == 0 {
-            Ok(val)
-        } else {
-            Err(FreeRtosError::Timeout)
-        }
-    }
-
     /// Get the minimum amount of stack that was ever left on this task.
     fn get_stack_high_water_mark(&self) -> u32 {
         unsafe { freertos_rs_get_stack_high_water_mark(self.raw_handle()) as u32 }
@@ -158,6 +93,35 @@ impl TaskSelfHandle {
 
         // Task should be deleted by this point.
         unreachable!()
+    }
+
+    /// Take the notification and either clear the notification value or decrement it by one.
+    pub fn take_notification<D: DurationTicks>(&self, clear: bool, wait_for: D) -> u32 {
+        unsafe { freertos_rs_task_notify_take(if clear { 1 } else { 0 }, wait_for.to_ticks()) }
+    }
+
+    /// Wait for a notification to be posted.
+    pub fn wait_for_notification<D: DurationTicks>(
+        &self,
+        clear_bits_enter: u32,
+        clear_bits_exit: u32,
+        wait_for: D,
+    ) -> Result<u32, FreeRtosError> {
+        let mut val = 0;
+        let r = unsafe {
+            freertos_rs_task_notify_wait(
+                clear_bits_enter,
+                clear_bits_exit,
+                &mut val as *mut _,
+                wait_for.to_ticks(),
+            )
+        };
+
+        if r == 0 {
+            Ok(val)
+        } else {
+            Err(FreeRtosError::Timeout)
+        }
     }
 }
 
@@ -259,15 +223,54 @@ impl TaskRemoteHandle {
             return TaskRemoteHandle::spawn_inner(Box::new(f), name, stack_size, priority);
         }
     }
+
+    /// Forcibly set the notification value for this task.
+    pub fn set_notification_value(&self, val: u32) {
+        self.notify(TaskNotification::OverwriteValue(val))
+    }
+
+    /// Notify this task.
+    pub fn notify(&self, notification: TaskNotification) {
+        unsafe {
+            let n = notification.to_freertos();
+            freertos_rs_task_notify(self.raw_handle(), n.0, n.1);
+        }
+    }
 }
 
-/// Helper methods to be performed on the task that is currently executing.
-pub struct CurrentTask; // FIXME could easily be called from an interrupt.
+pub struct TaskISRHandle {
+    task_handle: FreeRtosTaskHandle,
+}
 
-impl CurrentTask {
-    /// Get the minimum amount of stack that was ever left on the current task.
-    pub fn get_stack_high_water_mark() -> u32 {
-        unsafe { freertos_rs_get_stack_high_water_mark(0 as FreeRtosTaskHandle) as u32 }
+impl ISRSafeHandle<TaskISRHandle> for TaskRemoteHandle {
+    unsafe fn new_isr_safe_handle(&self) -> TaskISRHandle {
+        TaskISRHandle {
+            task_handle: self.task_handle,
+        }
+    }
+}
+
+impl TaskISRHandle {
+    /// Notify this task from an interrupt.
+    pub fn notify_from_isr(
+        &self,
+        context: &InterruptContext,
+        notification: TaskNotification,
+    ) -> Result<(), FreeRtosError> {
+        unsafe {
+            let n = notification.to_freertos();
+            let t = freertos_rs_task_notify_isr(
+                self.task_handle,
+                n.0,
+                n.1,
+                context.get_task_field_mut(),
+            );
+            if t != 0 {
+                Err(FreeRtosError::QueueFull)
+            } else {
+                Ok(())
+            }
+        }
     }
 }
 

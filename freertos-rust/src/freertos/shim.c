@@ -291,6 +291,15 @@ UBaseType_t freertos_rs_queue_send_isr(QueueHandle_t queue, void *item, BaseType
 	return 1;
 }
 
+UBaseType_t freertos_rs_queue_receive_isr(QueueHandle_t queue, void *item, BaseType_t *pxHigherPriorityTaskWoken)
+{
+	if (xQueueReceiveFromISR(queue, item, xHigherPriorityTaskWoken) == pdTRUE)
+	{
+		return 0;
+	}
+	return 1;
+}
+
 UBaseType_t freertos_rs_queue_receive(QueueHandle_t queue, void *item, TickType_t max_wait)
 {
 	if (xQueueReceive(queue, item, max_wait) != pdTRUE)
@@ -415,6 +424,24 @@ TimerHandle_t freertos_rs_timer_create(const char *const name, uint8_t name_len,
 	return handle;
 }
 
+BaseType_t freertos_rs_timer_reset(TimerHandle timer, TickType_t block_time)
+{
+	if (xTimerReset(timer, block_time) != pdPASS)
+	{
+		return 1;
+	}
+	return 0;
+}
+
+BaseType_t freertos_rs_timer_reset_isr(TimerHandle_t xTimer, BaseType_t *pxHigherPriorityTaskWoken)
+{
+	if (xTimerResetFromISR(xTimer, pxHigherPriorityTaskWoken) == pdPASS)
+	{
+		return 1;
+	}
+	return 0;
+}
+
 BaseType_t freertos_rs_timer_start(TimerHandle_t timer, TickType_t block_time)
 {
 	if (xTimerStart(timer, block_time) != pdPASS)
@@ -424,9 +451,27 @@ BaseType_t freertos_rs_timer_start(TimerHandle_t timer, TickType_t block_time)
 	return 0;
 }
 
+BaseType_t freertos_rs_timer_start_isr(TimerHandle_t xTimer, BaseType_t *pxHigherPriorityTaskWoken)
+{
+	if (xTimerStartFromISR(xTimer, pxHigherPriorityTaskWoken) == pdPASS)
+	{
+		return 1;
+	}
+	return 0;
+}
+
 BaseType_t freertos_rs_timer_stop(TimerHandle_t timer, TickType_t block_time)
 {
 	if (xTimerStop(timer, block_time) != pdPASS)
+	{
+		return 1;
+	}
+	return 0;
+}
+
+BaseType_t freertos_rs_timer_stop_isr(TimerHandle_t xTimer, BaseType_t *pxHigherPriorityTaskWoken)
+{
+	if (xTimerStopFromISR(xTimer, pxHigherPriorityTaskWoken) == pdPASS)
 	{
 		return 1;
 	}
@@ -445,6 +490,15 @@ BaseType_t freertos_rs_timer_delete(TimerHandle_t timer, TickType_t block_time)
 BaseType_t freertos_rs_timer_change_period(TimerHandle_t timer, TickType_t block_time, TickType_t new_period)
 {
 	if (xTimerChangePeriod(timer, new_period, block_time) != pdPASS)
+	{
+		return 1;
+	}
+	return 0;
+}
+
+BaseType_t freertos_rs_timer_change_period_isr(TimerHandle_t timer, TickType_t new_period, BaseType_t *pxHigherPriorityTaskWoken)
+{
+	if (xTimerChangePeriodFromISR(timer, new_period, pxHigherPriorityTaskWoken) != pdPASS)
 	{
 		return 1;
 	}

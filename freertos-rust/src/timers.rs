@@ -137,6 +137,17 @@ impl Timer {
         unsafe { Timer::spawn_inner(name, period_tick, auto_reload, Box::new(callback)) }
     }
 
+    // Reset the timer's count.
+    pub fn reset<D: DurationTicks>(&self, block_time: D) -> Result<(), FreeRtosError> {
+        unsafe {
+            if freertos_rs_timer_reset(self.handle, block_time.to_ticks()) == 0 {
+                Ok(())
+            } else {
+                Err(FreeRtosError::Timeout)
+            }
+        }
+    }
+
     /// Start the timer.
     pub fn start<D: DurationTicks>(&self, block_time: D) -> Result<(), FreeRtosError> {
         unsafe {
@@ -195,18 +206,82 @@ impl Timer {
 impl Drop for Timer {
     #[allow(unused_must_use)]
     fn drop(&mut self) {
-        if self.detached == true {
-            return;
-        }
-
-        unsafe {
-            if let Ok(callback_ptr) = self.get_id() {
-                // free the memory
-                Box::from_raw(callback_ptr as *mut Box<dyn Fn(Timer)>);
+        if self.detached == false {
+            unsafe {
+                if let Ok(callback_ptr) = self.get_id() {
+                    // free the memory
+                    Box::from_raw(callback_ptr as *mut Box<dyn Fn(Timer)>);
+                }
+                // todo: configurable timeout?
+                freertos_rs_timer_delete(self.handle, Duration::ms(1000).to_ticks());
             }
+        }
+    }
+}
 
-            // todo: configurable timeout?
-            freertos_rs_timer_delete(self.handle, Duration::ms(1000).to_ticks());
+pub struct TimerISRHandle {
+    handle: FreeRtosTimerHandle,
+}
+
+impl ISRSafeHandle<TimerISRHandle> for Timer {
+    unsafe fn new_isr_safe_handle(&self) -> TimerISRHandle {
+        TimerISRHandle {
+            handle: self.handle,
+        }
+    }
+}
+
+impl TimerISRHandle {
+    // Reset the timer's count.
+    pub fn reset(&self, context: &mut InterruptContext) -> Result<(), FreeRtosError> {
+        unsafe {
+            if freertos_rs_timer_reset_isr(self.handle, context.get_task_field_mut()) == 0 {
+                Ok(())
+            } else {
+                Err(FreeRtosError::Timeout)
+            }
+        }
+    }
+
+    /// Start the timer.
+    pub fn start(&self, context: &mut InterruptContext) -> Result<(), FreeRtosError> {
+        unsafe {
+            if freertos_rs_timer_start_isr(self.handle, context.get_task_field_mut()) == 0 {
+                Ok(())
+            } else {
+                Err(FreeRtosError::Timeout)
+            }
+        }
+    }
+
+    /// Stop the timer.
+    pub fn stop(&self, context: &mut InterruptContext) -> Result<(), FreeRtosError> {
+        unsafe {
+            if freertos_rs_timer_stop_isr(self.handle, context.get_task_field_mut()) == 0 {
+                Ok(())
+            } else {
+                Err(FreeRtosError::Timeout)
+            }
+        }
+    }
+
+    /// Change the period of the timer.
+    pub fn change_period<D: DurationTicks>(
+        &self,
+        context: &mut InterruptContext,
+        new_period: D,
+    ) -> Result<(), FreeRtosError> {
+        unsafe {
+            if freertos_rs_timer_change_period_isr(
+                self.handle,
+                new_period.to_ticks(),
+                context.get_task_field_mut(),
+            ) == 0
+            {
+                Ok(())
+            } else {
+                Err(FreeRtosError::Timeout)
+            }
         }
     }
 }

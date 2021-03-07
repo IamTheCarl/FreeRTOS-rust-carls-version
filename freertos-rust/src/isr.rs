@@ -3,7 +3,7 @@ use crate::shim::*;
 
 pub auto trait ISRSafe {}
 
-/// Structs that implement this can have an ISR safe handle created.
+/// A struct that implements this can have an ISR safe handle created.
 pub trait ISRSafeHandle<SafeForm: ISRSafe> {
     /// Create an ISR safe handle to this object. Calling functions on it from within a task will not cause
     /// memory corruption issues but may mess with the deterministic qualities of FreeRTOs.
@@ -23,7 +23,7 @@ pub trait ISRSafeHandle<SafeForm: ISRSafe> {
 /// Keep track of whether we need to yield the execution to a different
 /// task at the end of the interrupt.
 ///
-/// Should be dropped as the last thing inside a interrupt.
+/// Should be dropped as the last thing inside an interrupt.
 pub struct InterruptContext {
     x_higher_priority_task_woken: FreeRtosBaseType,
 }

@@ -76,6 +76,11 @@ extern "C" {
         item: FreeRtosVoidPtr,
         xHigherPriorityTaskWoken: FreeRtosBaseTypeMutPtr,
     ) -> FreeRtosUBaseType;
+    pub fn freertos_rs_queue_receive_isr(
+        queue: FreeRtosQueueHandle,
+        item: FreeRtosVoidPtr,
+        pxHigherPriorityTaskWoken: FreeRtosBaseTypeMutPtr,
+    ) -> FreeRtosUBaseType;
     pub fn freertos_rs_isr_yield();
 
     pub fn freertos_rs_task_notify_take(clear_count: u8, wait: FreeRtosTickType) -> u32;
@@ -130,13 +135,29 @@ extern "C" {
         timer_id: FreeRtosVoidPtr,
         callback: extern "C" fn(FreeRtosTimerHandle) -> (),
     ) -> FreeRtosTimerHandle;
+    pub fn freertos_rs_timer_reset(
+        timer: FreeRtosTimerHandle,
+        block_time: FreeRtosTickType,
+    ) -> FreeRtosBaseType;
+    pub fn freertos_rs_timer_reset_isr(
+        xTimer: FreeRtosTimerHandle,
+        pxHigherPriorityTaskWoken: FreeRtosBaseTypeMutPtr,
+    ) -> FreeRtosBaseType;
     pub fn freertos_rs_timer_start(
         timer: FreeRtosTimerHandle,
         block_time: FreeRtosTickType,
     ) -> FreeRtosBaseType;
+    pub fn freertos_rs_timer_start_isr(
+        timer: FreeRtosTimerHandle,
+        pxHigherPriorityTaskWoken: FreeRtosBaseTypeMutPtr,
+    ) -> FreeRtosBaseType;
     pub fn freertos_rs_timer_stop(
         timer: FreeRtosTimerHandle,
         block_time: FreeRtosTickType,
+    ) -> FreeRtosBaseType;
+    pub fn freertos_rs_timer_stop_isr(
+        timer: FreeRtosTimerHandle,
+        pxHigherPriorityTaskWoken: FreeRtosBaseTypeMutPtr,
     ) -> FreeRtosBaseType;
     pub fn freertos_rs_timer_delete(
         timer: FreeRtosTimerHandle,
@@ -146,6 +167,11 @@ extern "C" {
         timer: FreeRtosTimerHandle,
         block_time: FreeRtosTickType,
         new_period: FreeRtosTickType,
+    ) -> FreeRtosBaseType;
+    pub fn freertos_rs_timer_change_period_isr(
+        timer: FreeRtosTimerHandle,
+        new_period: FreeRtosTickType,
+        pxHigherPriorityTaskWoken: FreeRtosBaseTypeMutPtr,
     ) -> FreeRtosBaseType;
     pub fn freertos_rs_timer_get_id(timer: FreeRtosTimerHandle) -> FreeRtosVoidPtr;
 

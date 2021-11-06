@@ -7,8 +7,6 @@ This project is based on code from [freertos-rust](https://github.com/lobaro/Fre
 This is a work in progress but it's planned to eventually be significantly different from the original freertos-rust. Rather than wrapping C functions in structs and calling it a day, this library intends to make FreeRTOS feel like it was designed to be used with Rust.
 
 Planned changes:
-* Compiler enforced prevention of calling non-ISR safe functions from an ISR
-* Convenient (and reasonably safe) handoff of assets to ISRs.
 * Safe sharing of queues and other data structures between tasks.
 * Safe deferred interrupts
 * Access to raw handles for when this API is getting in your way (let me know when that happens)
@@ -16,6 +14,8 @@ Planned changes:
 
 Complete changes:
 * Tasks are given a handle to themselves
+* Compiler enforced prevention of calling non-ISR safe functions from an ISR
+* Convenient (and reasonably safe) handoff of assets to ISRs.
 
 ## How it works
 
